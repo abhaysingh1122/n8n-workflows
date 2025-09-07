@@ -11,16 +11,33 @@ It watches a Google Drive folder for new files, processes them into smaller chun
 
 ---
 
-## Workflow 1: Google Drive To Pinecone Ingestor.md
+# Workflow 1: Google Drive To Pinecone Ingestor.md
 This workflow automates the process of ingesting documents from Google Drive and preparing them for analysis.
 
-How It Works
-Source: The workflow is triggered whenever a new file is added to a specific folder in Google Drive.
+## How It Works
+- Source: The workflow is triggered whenever a new file is added to a specific folder in Google Drive.
 
-Download: The newly created file is automatically downloaded.
+- Download: The newly created file is automatically downloaded.
 
-Get Info: A text splitter extracts text from the document and breaks it into smaller, more manageable chunks.
+- Get Info: A text splitter extracts text from the document and breaks it into smaller, more manageable chunks.
 
-Embedder: Each text chunk is converted into a numerical vector using an embeddings model. This process allows for semantic search, meaning the system can understand the meaning of your query rather than just matching keywords.
+- Embedder: Each text chunk is converted into a numerical vector using an embeddings model. This process allows for semantic search, meaning the system can understand the meaning of your query rather than just matching keywords.
 
-Store in Pinecone: The final vector embeddings are saved in your Pinecone vector database. This creates a high-performance index of your documents, ready for fast and accurate retrieval.
+- Store in Pinecone: The final vector embeddings are saved in your Pinecone vector database. This creates a high-performance index of your documents, ready for fast and accurate retrieval.
+---
+
+# Workflow 2: VectorDatabaseAnalyzer.md
+This workflow uses the indexed data from the first workflow to answer questions and provide analysis.
+
+## How It Works
+- AI Chat Trigger: The process begins when you ask a question in the chat interface.
+
+- AI Analyst: The AI analyst determines what information is needed to answer your query.
+
+- Vector Retrieval: The system uses your question to perform a search in the Pinecone vector database, pulling out the most relevant document chunks (based on their vector similarity).
+
+- Contextual AI: These retrieved chunks are provided as context to a large language model. This model then generates a comprehensive and accurate answer based on the specific information found in your documents.
+
+- Session Memory: The workflow also includes a memory component to remember previous questions and provide better, more coherent answers throughout the conversation.
+---
+
