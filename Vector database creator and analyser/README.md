@@ -43,11 +43,12 @@ This workflow uses the indexed data from the first workflow to answer questions 
 ## Notes
 - Credentials (Google Drive, OpenAI, Pinecone) are **not included**. Set these up manually in your n8n instance.  
 - Works best with text-heavy documents (PDFs, Word, etc.).
-
+---
 ## Workflow Diagram
 - **Workflow 1 (Google Drive to Pinecone Ingestion):** 
-<img width="1540" height="791" alt="Screenshot 2025-09-07 225329" src="https://github.com/user-attachments/assets/707a85f8-a715-4741-a3aa-7ec877a2e9e4" />
+<img width="1511" height="784" alt="image" src="https://github.com/user-attachments/assets/5463769b-052d-46a1-8386-f42f9bc7e4be" />
 
 - **Workflow 2 (Vector Database Analyst Workflow):** 
-<img width="1301" height="783" alt="Screenshot 2025-09-07 225315" src="https://github.com/user-attachments/assets/ac7af864-394e-4341-aacb-c0cf21a309de" />
+<img width="975" height="692" alt="image" src="https://github.com/user-attachments/assets/27431576-5b2e-44c1-b838-172cd5d74f6d" />
 
+---
