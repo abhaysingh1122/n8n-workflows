@@ -1,0 +1,313 @@
+{
+  "name": "vector database",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "triggerOn": "specificFolder",
+        "folderToWatch": {
+          "__rl": true,
+          "value": "16EBgLP0i7epStE0ahZlGjdrVURtrIHDA",
+          "mode": "list",
+          "cachedResultName": "automation data",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/16EBgLP0i7epStE0ahZlGjdrVURtrIHDA"
+        },
+        "event": "fileCreated",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDriveTrigger",
+      "typeVersion": 1,
+      "position": [
+        -160,
+        0
+      ],
+      "id": "144a2aff-e5fd-49e2-b54c-af189ca32caf",
+      "name": "Google Drive Trigger",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "QMCWMO7WIBSrCtCz",
+          "name": "Google Drive account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "insert",
+        "pineconeIndex": {
+          "__rl": true,
+          "value": "n8n2drive",
+          "mode": "id"
+        },
+        "options": {
+          "pineconeNamespace": "tsladriveanaly"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
+      "typeVersion": 1,
+      "position": [
+        540,
+        0
+      ],
+      "id": "4f109f8f-98b1-4725-aa50-12291dacbb7a",
+      "name": "Pinecone Vector Store",
+      "credentials": {
+        "pineconeApi": {
+          "id": "c9SbQ0dR49MybqxS",
+          "name": "PineconeApi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        100,
+        260
+      ],
+      "id": "68650209-4a4a-434c-9330-0dac41427972",
+      "name": "Embeddings OpenAI",
+      "credentials": {
+        "openAiApi": {
+          "id": "8nxnqHx8iYbZNJAV",
+          "name": "OpenAi account 7"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chunkSize": 900,
+        "chunkOverlap": 50,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.textSplitterRecursiveCharacterTextSplitter",
+      "typeVersion": 1,
+      "position": [
+        420,
+        480
+      ],
+      "id": "0f5e8e36-2796-4ec7-90ad-c2881a8465b5",
+      "name": "Recursive Character Text Splitter"
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json.id }}",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        220,
+        0
+      ],
+      "id": "65d41940-8fc4-4d2e-981f-0c577b186f05",
+      "name": "Download files",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "QMCWMO7WIBSrCtCz",
+          "name": "Google Drive account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## Source\nChecks for new data in drive's File.",
+        "height": 260,
+        "width": 320,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -300,
+        -100
+      ],
+      "typeVersion": 1,
+      "id": "be666a3f-82f9-49a6-9868-bc5fc4d0026c",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "## Get Info\n**Extract File Metadata**\n",
+        "height": 200,
+        "width": 370,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        640,
+        180
+      ],
+      "typeVersion": 1,
+      "id": "550d00d4-72c3-4b3c-b687-32271b8647ff",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "## Text splitter\nSplit PDF into Text Chunks",
+        "height": 200,
+        "width": 320,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        240,
+        420
+      ],
+      "typeVersion": 1,
+      "id": "db7ef7b6-9875-4aac-9de8-658f7808267d",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "content": "## Embedder\nConvert Text to Vectors",
+        "height": 200,
+        "width": 320,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -80,
+        200
+      ],
+      "typeVersion": 1,
+      "id": "571872f8-9ec2-4b31-ad55-185d610eed2d",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "dataType": "binary",
+        "loader": "pdfLoader",
+        "options": {
+          "metadata": {
+            "metadataValues": [
+              {
+                "name": "TSLA4",
+                "value": "={{ $('Google Drive Trigger').item.json.name }}"
+              }
+            ]
+          }
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "typeVersion": 1,
+      "position": [
+        740,
+        260
+      ],
+      "id": "45e22568-865e-449b-9791-91fcf23c1ad2",
+      "name": "Default Data Loader"
+    },
+    {
+      "parameters": {
+        "content": "## Store in Pinecone Vector DB \nSaves the embedded chunks in Pinecone for smart querying later.",
+        "height": 240,
+        "width": 400
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        480,
+        -100
+      ],
+      "typeVersion": 1,
+      "id": "dff6a866-65b2-4054-9970-4745838f771a",
+      "name": "Sticky Note4"
+    },
+    {
+      "parameters": {
+        "content": "## Download File\nGrabs the uploaded file to process it further.",
+        "height": 260,
+        "width": 320
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        100,
+        -100
+      ],
+      "typeVersion": 1,
+      "id": "219dbc5d-f0e3-4287-83ef-94fef63bfe91",
+      "name": "Sticky Note5"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Google Drive Trigger": {
+      "main": [
+        [
+          {
+            "node": "Download files",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings OpenAI": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Pinecone Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Recursive Character Text Splitter": {
+      "ai_textSplitter": [
+        [
+          {
+            "node": "Default Data Loader",
+            "type": "ai_textSplitter",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download files": {
+      "main": [
+        [
+          {
+            "node": "Pinecone Vector Store",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Default Data Loader": {
+      "ai_document": [
+        [
+          {
+            "node": "Pinecone Vector Store",
+            "type": "ai_document",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "6a2499ae-776f-43ca-b4ea-9bb4f4106949",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "909085f42eb97c736deb6b82d2c110f03ccf50d782b66aa0c8b46722c473d9a6"
+  },
+  "id": "EglVkZ1EBk6Yikn9",
+  "tags": []
+}
