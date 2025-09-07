@@ -9,6 +9,8 @@ This repository contains the following n8n workflows:
 
     - **Files:**
   
-      [Vector database creator and analyser](Vector database creator and analyser/Google Drive to Pinecone Ingestor)
+      * [Google_Drive_TO_Pinecone_Ingestion](Vector_database_creator_and_analyser/Google_Drive_TO_Pinecone_Ingestion)
+      
+      * [Vector_Database_Analyst_Workflow](Vector_database_creator_and_analyser/Vector_Database_Analyst_Workflow)
       
       
