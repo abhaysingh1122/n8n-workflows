@@ -11,3 +11,16 @@ It watches a Google Drive folder for new files, processes them into smaller chun
 
 ---
 
+## Workflow 1: Google Drive To Pinecone Ingestor.md
+This workflow automates the process of ingesting documents from Google Drive and preparing them for analysis.
+
+How It Works
+Source: The workflow is triggered whenever a new file is added to a specific folder in Google Drive.
+
+Download: The newly created file is automatically downloaded.
+
+Get Info: A text splitter extracts text from the document and breaks it into smaller, more manageable chunks.
+
+Embedder: Each text chunk is converted into a numerical vector using an embeddings model. This process allows for semantic search, meaning the system can understand the meaning of your query rather than just matching keywords.
+
+Store in Pinecone: The final vector embeddings are saved in your Pinecone vector database. This creates a high-performance index of your documents, ready for fast and accurate retrieval.
