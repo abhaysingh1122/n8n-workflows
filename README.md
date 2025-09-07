@@ -14,14 +14,19 @@ This repository contains the following n8n workflows:
       * [Vector_Database_Analyst_Workflow](Vector_database_creator_and_analyser/Vector_Database_Analyst_Workflow)
       
 ---   
-## How to Use
-- Clone the Repository: Clone this repository to your local machine.
+## 🛠️ How to Use
+- Clone the Repository: 💻 Clone this repository to your local machine.
 
-- Import Workflows: Import the .json files for each workflow into your n8n instance.
+- Import Workflows: 📥 Import the .json files for each workflow into your n8n instance.
 
-- Configure Credentials: Update the credentials for your Google Drive, Pinecone, and OpenAI accounts within each workflow.
+- Configure Credentials: 🔑 Update the credentials for your Google Drive, Pinecone, and OpenAI accounts within each workflow.
 
-- Activate Workflows: Activate the workflows in n8n to begin processing documents and answering queries.
+- Activate Workflows:▶️ Activate the workflows in n8n to begin processing documents and answering queries.
 
-## Contributing
+## 🤝 Contributing
 Feel free to open an issue or submit a pull request if you have suggestions for improvements or new features.
+
+## ❓ Support
+If you encounter any issues or have questions about using these workflows, please open an issue in this repository.
+
+
