@@ -1,1 +1,374 @@
-
+{
+  "name": "vector database reader- ai",
+  "nodes": [
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are an AI assistant specialized in analyzing Tesla's quarterly financial reports.\n\nYour primary task is to answer questions accurately and precisely using the vector database, which contains relevant documents (Q3 and Q4 reports).\n\nOnly provide information that you retrieve from the documents (or verified expert knowledge). If something is not included in the dataset or is unclear, clearly state that you do not have sufficient information.\n\nThe question asked by the user will be: {{ $json.chatInput }}\n\nStructure of your responses:\n• Concise and to the point\n• Specific numbers and facts, when available\n• Clearly indicate which quarterly report (Q3 or Q4) the information comes from\n\nObjective:\nProvide users with reliable and quick insights into Tesla's quarterly financials without unnecessary details.",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.8,
+      "position": [
+        340,
+        -20
+      ],
+      "id": "66078ed9-557d-40a7-bb7b-e92be6e3e346",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -100,
+        300
+      ],
+      "id": "4f193b94-3d6f-44d9-a5ca-0e38eed03921",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "8nxnqHx8iYbZNJAV",
+          "name": "OpenAi account 7"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "contextWindowLength": 10
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        260,
+        300
+      ],
+      "id": "1756fd4b-2b11-443b-85f9-8ffd0f5b2a29",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "name": "tsla_Q",
+        "description": "Returns documents related to Tesla Q3 and Q4, the financials, outlook, merges and everything important from the earning reports."
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolVectorStore",
+      "typeVersion": 1,
+      "position": [
+        680,
+        300
+      ],
+      "id": "c2e90d00-73f4-4722-aa6e-676f1123a9b8",
+      "name": "Answer questions with a vector store"
+    },
+    {
+      "parameters": {
+        "pineconeIndex": {
+          "__rl": true,
+          "value": "n8n2drive",
+          "mode": "list",
+          "cachedResultName": "n8n2drive"
+        },
+        "options": {
+          "pineconeNamespace": "tsladriveanaly"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
+      "typeVersion": 1,
+      "position": [
+        200,
+        540
+      ],
+      "id": "1fb908ce-a600-4d91-8583-9626fdf25bb7",
+      "name": "Pinecone Vector Store",
+      "credentials": {
+        "pineconeApi": {
+          "id": "c9SbQ0dR49MybqxS",
+          "name": "PineconeApi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -160,
+        760
+      ],
+      "id": "4f382b3b-8de0-48ca-9bb5-ec17fb5df725",
+      "name": "Embeddings OpenAI",
+      "credentials": {
+        "openAiApi": {
+          "id": "8nxnqHx8iYbZNJAV",
+          "name": "OpenAi account 7"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        940,
+        540
+      ],
+      "id": "2f967555-fb65-4928-8e61-82939ab109aa",
+      "name": "OpenAI Chat Model1",
+      "credentials": {
+        "openAiApi": {
+          "id": "8nxnqHx8iYbZNJAV",
+          "name": "OpenAi account 7"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "public": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -20,
+        -20
+      ],
+      "id": "22fb8c5c-07ca-4f9c-9db9-731dc8fdd047",
+      "name": "When chat message received",
+      "webhookId": "85c73963-02eb-4bd2-a7fa-936c3e8958e7"
+    },
+    {
+      "parameters": {
+        "content": "## AI-chat trigger \nWhen asked for a specific info",
+        "height": 260,
+        "width": 340,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -200,
+        -120
+      ],
+      "typeVersion": 1,
+      "id": "a2e82533-ea7d-4d5f-b410-99805e156b1d",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "## AI analyst\nAI used for analysis of data according to the fixed prompt given and answers on the basis of data asked by a  user.",
+        "height": 260,
+        "width": 460
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        260,
+        -120
+      ],
+      "typeVersion": 1,
+      "id": "19f74ae5-f496-452e-b28e-6750278c475f",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "## OpenAI Chat Model\nUsed for OpenAI's API to run AI Agent node",
+        "height": 240,
+        "width": 340,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -240,
+        180
+      ],
+      "typeVersion": 1,
+      "id": "05cf47de-374c-435f-80b0-1d51fa8250ae",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "content": "##  Session Memory \nHelps the AI remember recent questions for better flow.\n\n",
+        "height": 240,
+        "width": 400,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        140,
+        180
+      ],
+      "typeVersion": 1,
+      "id": "2d433cfe-09fa-4334-82c2-d441e07af8ba",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "content": "## Vector Retrieval  \nPulls the most relevant docs from your Pinecone vector DB.\n",
+        "height": 240,
+        "width": 400,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        600,
+        180
+      ],
+      "typeVersion": 1,
+      "id": "22261171-3ca0-4a30-8bac-49d2475c86a7",
+      "name": "Sticky Note4"
+    },
+    {
+      "parameters": {
+        "content": "## Pinecone DB  \nContains embedded, query-ready documents.\n",
+        "height": 220,
+        "width": 400,
+        "color": 2
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        80,
+        440
+      ],
+      "typeVersion": 1,
+      "id": "008db8fe-6139-4adc-bd86-64d266547114",
+      "name": "Sticky Note5"
+    },
+    {
+      "parameters": {
+        "content": "## Convert to Embeddings  \nTurns text into vectors for smart search.\n",
+        "height": 240,
+        "width": 380,
+        "color": 2
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -320,
+        640
+      ],
+      "typeVersion": 1,
+      "id": "fce35022-342c-4a96-aef0-900075c3554e",
+      "name": "Sticky Note6"
+    },
+    {
+      "parameters": {
+        "content": "## Contextual AI  \nHandles document-specific questions from the vector store.\n",
+        "height": 220,
+        "width": 380,
+        "color": 2
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        720,
+        440
+      ],
+      "typeVersion": 1,
+      "id": "2c2ea81a-8772-4565-ae7d-e9aa92397121",
+      "name": "Sticky Note7"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Answer questions with a vector store": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pinecone Vector Store": {
+      "ai_vectorStore": [
+        [
+          {
+            "node": "Answer questions with a vector store",
+            "type": "ai_vectorStore",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings OpenAI": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Pinecone Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Answer questions with a vector store",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "d78aa027-4f8a-409c-84ab-69be57413fc4",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "909085f42eb97c736deb6b82d2c110f03ccf50d782b66aa0c8b46722c473d9a6"
+  },
+  "id": "Dx7NCNXuhf3Hmo7o",
+  "tags": []
+}
