@@ -127,3 +127,29 @@
     "OpenAI Chat Model": {
       "ai_languageModel": [
         [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "909085f42eb97c736deb6b82d2c110f03ccf50d782b66aa0c8b46722c473d9a6"
+  }
+}
