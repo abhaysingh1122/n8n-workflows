@@ -47,4 +47,5 @@ Import the n8n Workflow:
 ---
 ## Workflow Visualization 🖼️
 The workflow is structured as follows:
+<img width="1068" height="559" alt="Screenshot 2025-09-09 232839" src="https://github.com/user-attachments/assets/ca59eab9-2222-4c22-8cbb-419444005931" />
 
