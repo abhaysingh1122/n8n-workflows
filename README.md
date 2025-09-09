@@ -13,6 +13,10 @@ This repository contains the following n8n workflows:
       
       * [Vector_Database_Analyst_Workflow](Vector_database_creator_and_analyser/Vector_Database_Analyst_Workflow)
 - **🤖 WhatsApp-Based Chatbot:**
+      -**Description:** This workflow creates a simple chatbot that receives messages from WhatsApp, processes them using an AI agent powered by OpenAI's ```gpt-4o-mini``` model, and sends a response back to the user.
+  
+    -**Files:**
+      * [whatsapp_chatbot_workflow](Whatsapp_based_chat_bot)
 ---   
 ## 🛠️ How to Use
 - Clone the Repository: 💻 Clone this repository to your local machine.
