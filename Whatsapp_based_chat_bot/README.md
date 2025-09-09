@@ -1,14 +1,14 @@
-WhatsApp-Based Chatbot 🤖
-This repository contains an n8n workflow for a simple WhatsApp chatbot. It uses the WhatsApp Business Cloud API to receive messages and an AI Agent powered by OpenAI to generate responses.
+# WhatsApp-Based Chatbot 🤖
+This file contains n8n workflow for a simple WhatsApp chatbot. It uses the WhatsApp Business Cloud API to receive messages and an AI Agent powered by OpenAI to generate responses.
 
-Features ✨
-Automated Responses: Automatically replies to incoming WhatsApp messages. 💬
+## Features ✨
+- **Automated Responses:** Automatically replies to incoming WhatsApp messages. 💬
 
-AI-Powered: Uses the OpenAI gpt-4o-mini model for natural language understanding and response generation. 🧠
+- **AI-Powered:** Uses the OpenAI gpt-4o-mini model for natural language understanding and response generation. 🧠
 
-Contextual Memory: Maintains a conversation history for each user to provide more relevant and coherent replies. 🧠💡
-
-Prerequisites 🛠️
+- **Contextual Memory:** Maintains a conversation history for each user to provide more relevant and coherent replies. 🧠💡
+---
+## Prerequisites 🛠️
 To use this workflow, you will need:
 
 An active n8n instance (either self-hosted or cloud). ☁️
