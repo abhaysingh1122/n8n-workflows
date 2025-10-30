@@ -17,7 +17,13 @@ This repository contains the following n8n workflows:
   
     - **Files:**
       
-      * [whatsapp_chatbot_workflow](Whatsapp_based_chat_bot)
+      * [whatsapp_chatbot_workflow](Whatsapp_based_chat_bot)    
+- **💬 Telegram AI Assistant Workflow:**
+    - **Description:** A powerful conversational assistant built entirely in n8n that integrates with Telegram and OpenAI.  
+      It supports both text and voice messages, transcribing audio inputs via OpenAI Whisper and replying intelligently using the `gpt-4o` model.  
+      The workflow also connects to Gmail and Google Calendar, allowing it to summarize emails, send messages, and schedule or fetch calendar events — all directly from Telegram.
+    - **Files:**
+      * [Telegram_AI_Assistant_Workflow](Telegram_AI_Assistant_Workflow)
 ---   
 ## 🛠️ How to Use
 - Clone the Repository: 💻 Clone this repository to your local machine.
