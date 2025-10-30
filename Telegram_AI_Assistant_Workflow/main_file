@@ -117,14 +117,14 @@
         "promptType": "define",
         "text": "={{ $json.text }}",
         "options": {
-          "systemMessage": "=# Role  \nYou are an assistant with access to multiple tools.  \n\n# Behavior  \nYou respond concisely and succinctly in a friendly and approachable style.\n\n# Date and Time: {{ $now }}\n\n# Tools  \nYou have access to multiple tools and always use the appropriate one depending on the task.  \n\n## Gmail_Summary  \nUse this tool to summarize emails.  \n\n## Gmail_Send  \nUse this tool to send emails. You sign every email with \"Arnie\" and never use empty placeholders for names.  \nEnsure that emails are well-formatted with a proper body.  \n\n## Calendar_Set  \nUse this tool to schedule appointments in the calendar.\n\n\n## Calendar_Get  \nUse this tool to find calendar events and inform me when I have an appointment."
+          "systemMessage": "=# Role  \nYou are an assistant with access to multiple tools.  \n\n# Behavior  \nYou respond concisely and succinctly in a friendly and approachable style.\n\n# Date and Time: {{ $now }}\n\n# Tools  \nYou have access to multiple tools and always use the appropriate one depending on the task.  \n\n## Gmail_Summary  \nUse this tool to summarize emails.  \n\n## Gmail_Send  \nUse this tool to send emails. You sign every email with \"Abhay\" and never use empty placeholders for names.  \nEnsure that emails are well-formatted with a proper body.  \n\n## Calendar_Set  \nUse this tool to schedule appointments in the calendar.\n\n\n## Calendar_Get  \nUse this tool to find calendar events and inform me when I have an appointment."
         }
       },
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 1.7,
       "position": [
         656,
-        32
+        16
       ],
       "id": "9ac2db1d-92c4-48bb-bfaf-23c892bd2fa0",
       "name": "AI Agent",
@@ -474,3 +474,19 @@
     },
     "Calendar_Get": {
       "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "b47366ed72c29a73d7897157fda5840708cc32b5d2026077edef3f52a0c42af2"
+  }
+}
