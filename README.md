@@ -27,6 +27,21 @@ This repository contains the following n8n workflows:
 
     - **Files:**
       * [Telegram_AI_Assistant_Workflow](Telegram_AI_Assistant_Workflow)
+     
+- **🖼️ NanoBanana Integration with n8n:**
+    - **Description:** This workflow connects n8n with Google’s Nanobanana to generate images from text prompts.  
+      When a chat message is received, the workflow sends the prompt to Gemini, retrieves the generated image, and converts it into a downloadable file format using n8n’s file conversion node.
+
+    - **Features:**
+      - Uses Gemini via the Generative Language API.  
+      - Automatically processes text prompts into image outputs.  
+      - Converts image data to binary for easy handling and exporting in n8n.  
+      - Fully local execution using n8n’s chat trigger system.
+
+    - **Files:**
+      * [Nanobana_integration_with_n8n](Nanobana_integration_with_n8n)
+
+---
 
 ---
 
