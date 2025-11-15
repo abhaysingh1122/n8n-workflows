@@ -1,1 +1,2197 @@
-
+{
+  "nodes": [
+    {
+      "parameters": {
+        "jsCode": "// Output shape: [{ json: { hashtags: [...], profiles: [...], numPosts: \"6\" } }]\nconst hashtags = [];\nconst profiles = [];\n\n// helper: safe extract fields\nfunction getFields(obj) {\n  if (!obj) return {};\n  if (obj.fields) return obj.fields;\n  if (obj.body && obj.body.fields) return obj.body.fields;\n  if (obj.body) return obj.body;\n  return obj;\n}\n\n// slugify for linkedin url\nfunction slugify(s) {\n  return String(s || '')\n    .trim()\n    .toLowerCase()\n    .replace(/^#/, '')\n    .replace(/[^\\w\\s-]/g, '')\n    .replace(/\\s+/g, '-')\n    .replace(/-+/g, '-')\n    .replace(/^-+|-+$/g, '');\n}\n\n// 1) get numPosts\nlet numPosts = null;\n\nfunction extractNumPosts(fields) {\n  const candidates = [\n    fields.numPosts,\n    fields['numPosts'],\n    fields['# numPosts'],\n    fields['#numPosts'],\n    fields.num_posts\n  ];\n  for (const c of candidates) {\n    if (c !== undefined && c !== null && String(c).trim() !== \"\") return String(c);\n  }\n  return null;\n}\n\n// 2) get items\nlet items = [];\ntry {\n  const named = $items(\"Search LinkedIn Inputs1\");\n  if (Array.isArray(named) && named.length) items = named;\n} catch (e) {}\n\nif (!items.length) {\n  try { items = $items() || []; } catch (e) { items = []; }\n}\n\n// 3) process each row\nfor (const it of items) {\n  const fields = getFields(it.json || {});\n\n  // update numPosts if available\n  if (!numPosts) numPosts = extractNumPosts(fields);\n\n  // candidate input field\n  const raw =\n    fields[\"URL/Hashtag/Company\"] ||\n    fields[\"Username/Hashtag\"] ||\n    fields[\"Hashtag/ Username\"] ||\n    fields[\"Name\"] ||\n    fields[\"Company\"] ||\n    fields[\"company\"] ||\n    fields[\"Company Name\"] ||\n    fields[\"Hashtag\"] ||\n    fields[\"Username\"] ||\n    null;\n\n  if (!raw) continue;\n\n  const value = String(raw).trim();\n  const type = String(fields.Type || \"\").toLowerCase();\n\n  // CASE 1: Hashtag\n  if (type.includes(\"hashtag\") || value.startsWith(\"#\")) {\n    hashtags.push(value.replace(/^#/, \"\").trim());\n    continue;\n  }\n\n  // CASE 2: Company\n  if (type.includes(\"company\")) {\n    const slug = slugify(value);\n    const url = `https://www.linkedin.com/company/${slug}`;\n    profiles.push(url);\n    continue;\n  }\n\n  // CASE 3: Profile\n  if (type.includes(\"profile\")) {\n    const slug = slugify(value);\n    const url = `https://linkedin.com/in/${slug}`;\n    profiles.push(url);\n    continue;\n  }\n\n  // CASE 4: No type — heuristics\n  if (value.includes(\" \")) {\n    // treat as company\n    const slug = slugify(value);\n    profiles.push(`https://www.linkedin.com/company/${slug}`);\n  } else {\n    // treat as profile handle\n    const slug = slugify(value);\n    profiles.push(`https://linkedin.com/in/${slug}`);\n  }\n}\n\n// Fallback numPosts from LinkedIn node\nif (!numPosts) {\n  try {\n    const linked = $items(\"LinkedIn\")[0]?.json;\n    const cand = linked?.numPosts ?? linked?.num_posts;\n    if (cand) numPosts = String(cand);\n  } catch (e) {}\n}\n\n// FINAL OUTPUT — EXACT SCHEMA\nreturn [{\n  json: {\n    hashtags,\n    profiles,\n    numPosts: numPosts || null\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -400,
+        240
+      ],
+      "id": "e398dcf6-ce3f-4961-aefc-a81a098495d9",
+      "name": "Code6"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "hashtags",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        0,
+        528
+      ],
+      "id": "a1ee44e2-8e88-4b19-8f75-b465fd668e81",
+      "name": "Split Out"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Build a unified list of post links\nconst postURLs = [];\n\nfor (const { json } of items) {\n  const link = json.url || json.post_url; // either field may hold the link\n  if (link) postURLs.push(link);\n}\n\n// Return Make‑style single‑bundle output\nreturn [\n  {\n    json: { postURLs }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        224,
+        0
+      ],
+      "id": "eaa79c2f-9f02-41ea-8830-d1266f61ef5f",
+      "name": "Create Json"
+    },
+    {
+      "parameters": {
+        "fieldsToSummarize": {
+          "values": [
+            {
+              "aggregation": "concatenate",
+              "field": "text",
+              "separateBy": "\n"
+            }
+          ]
+        },
+        "fieldsToSplitBy": "post_input",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.summarize",
+      "typeVersion": 1.1,
+      "position": [
+        960,
+        0
+      ],
+      "id": "9f98b010-ab6c-4925-bd42-dd6275f6245a",
+      "name": "Summarize4"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "postURLs",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        464,
+        0
+      ],
+      "id": "bc4f582b-f718-4bcb-beb3-a94d1c3f5417",
+      "name": "Split Out1"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "bccf8cba-f73f-4fef-89ce-d980f8763b13",
+              "leftValue": "={{ $json.profiles }}",
+              "rightValue": "",
+              "operator": {
+                "type": "array",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -240,
+        16
+      ],
+      "id": "74150a64-0fff-4440-871c-2705111cdac8",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "f9850383-b8de-4526-acbf-ab65c120949c",
+              "leftValue": "={{ $json.hashtags }}",
+              "rightValue": "",
+              "operator": {
+                "type": "array",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -240,
+        432
+      ],
+      "id": "537ae43a-297b-43c9-932d-9e856b565944",
+      "name": "If1"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "advanced": true,
+        "mergeByFields": {
+          "values": [
+            {
+              "field1": "post_input",
+              "field2": "post_url"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.1,
+      "position": [
+        1184,
+        688
+      ],
+      "id": "e642391b-95d9-4217-a485-c296f3d95352",
+      "name": "Merge8"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Build a unified list of post links\nconst postURLs = [];\n\nfor (const { json } of items) {\n  const link = json.url || json.post_url; // either field may hold the link\n  if (link) postURLs.push(link);\n}\n\n// Return Make‑style single‑bundle output\nreturn [\n  {\n    json: { postURLs }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        464,
+        528
+      ],
+      "id": "278eaf6a-d1ea-424f-9816-fc70a05558f7",
+      "name": "Create Json1"
+    },
+    {
+      "parameters": {
+        "fieldsToSummarize": {
+          "values": [
+            {
+              "aggregation": "concatenate",
+              "field": "text",
+              "separateBy": "\n"
+            }
+          ]
+        },
+        "fieldsToSplitBy": "post_input",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.summarize",
+      "typeVersion": 1.1,
+      "position": [
+        960,
+        528
+      ],
+      "id": "a555588b-10d5-44f6-afed-17ab135606bb",
+      "name": "Summarize5"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "advanced": true,
+        "mergeByFields": {
+          "values": [
+            {
+              "field1": "post_input",
+              "field2": "url"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.1,
+      "position": [
+        1216,
+        128
+      ],
+      "id": "031ccf8c-ed79-4758-9fce-963b3cad64d5",
+      "name": "Merge9"
+    },
+    {
+      "parameters": {
+        "operation": "removeItemsSeenInPreviousExecutions",
+        "dedupeValue": "={{ $('Merge9').item.json.urn }}",
+        "options": {
+          "scope": "node"
+        }
+      },
+      "type": "n8n-nodes-base.removeDuplicates",
+      "typeVersion": 2,
+      "position": [
+        2112,
+        192
+      ],
+      "id": "9522ce41-d8f2-4efb-b112-cf83e39176e4",
+      "name": "Checks Duplicates based on prev executions4"
+    },
+    {
+      "parameters": {
+        "operation": "removeItemsSeenInPreviousExecutions",
+        "dedupeValue": "={{ $('Merge8').item.json.activity_id }}",
+        "options": {
+          "scope": "node"
+        }
+      },
+      "type": "n8n-nodes-base.removeDuplicates",
+      "typeVersion": 2,
+      "position": [
+        2048,
+        688
+      ],
+      "id": "bd4c0b75-0697-49b1-9972-4d622c3b604d",
+      "name": "Checks Duplicates based on prev executions5"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.apify.com/v2/acts/supreme_coder~linkedin-post/run-sync-get-dataset-items?token=apify_api_xxxxxxx",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n    \"deepScrape\": true,\n    \"limitPerSource\": {{ $json.numPosts }},\n    \"rawData\": false,\n    \"urls\": {{ $json.profiles.toJsonString() }}\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "a8c1accd-0ec4-4add-9da5-3bb435ae5de1",
+      "name": "Scrapes LinkedIn Profiles and Companies"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.apify.com/v2/acts/apimaestro~linkedin-posts-search-scraper-no-cookies/run-sync-get-dataset-items?token=apify_api_xxxxxxxxx",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"keyword\": \"{{ $json.hashtags }}\",\n  \"limit\": {{ $('If1').item.json.numPosts }}\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        208,
+        528
+      ],
+      "id": "46fec284-a13a-477c-b993-eadc4467f34e",
+      "name": "Scrapes LinkedIn Posts based on HashTags",
+      "alwaysOutputData": false,
+      "retryOnFail": true,
+      "maxTries": 2
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.apify.com/v2/acts/apimaestro~linkedin-post-comments-replies-engagements-scraper-no-cookies/run-sync-get-dataset-items?token=apify_api_xxxxxxxxxx",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n    \"limit\": 15,\n    \"postIds\": \n{{ $json.postURLs.toJsonString() }}\n\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        704,
+        528
+      ],
+      "id": "a09f0fd9-5dcb-4208-94c9-c7b969d13249",
+      "name": "Scraping LinkedIn Posts for Comments for Sentimental Analysis",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 2000,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.apify.com/v2/acts/apimaestro~linkedin-post-comments-replies-engagements-scraper-no-cookies/run-sync-get-dataset-items?token=apify_api_xxxxxxx",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n    \"limit\": 20,\n    \"postIds\": [\n{{ $json.postURLs.toJsonString() }}\n]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        704,
+        0
+      ],
+      "id": "e103d5c4-ea84-4ac3-8556-7fcc3f5b9a8e",
+      "name": "Scraping LinkedIn Posts for Comments for Sentimental Analysis1",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 2000,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.query.action }}",
+                    "rightValue": "Research",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "8ae106e8-5d7d-4dfc-95c5-6ff06f2448da"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Research"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "600764ea-41b2-46a7-9b1d-45545481da57",
+                    "leftValue": "={{ $json.query.action }}",
+                    "rightValue": "Write Post",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Write Post"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "8120d985-7bd6-4541-ba7c-db437d2476c3",
+                    "leftValue": "={{ $json.query.action }}",
+                    "rightValue": "Generate Image",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Generate Image"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [
+        -704,
+        672
+      ],
+      "id": "985f4e78-95fc-4a53-9962-743c48af917f",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "base": {
+          "__rl": true,
+          "value": "appm8eW6JJG4UxFKJ",
+          "mode": "list",
+          "cachedResultName": "LinkedIn Performance Analyzer",
+          "cachedResultUrl": "https://airtable.com/appm8eW6JJG4UxFKJ"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblKNcVvTasv1fto5",
+          "mode": "list",
+          "cachedResultName": "Dashboard",
+          "cachedResultUrl": "https://airtable.com/appm8eW6JJG4UxFKJ/tblKNcVvTasv1fto5"
+        },
+        "id": "={{ $json.query.recordId }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        -560,
+        240
+      ],
+      "id": "0da91158-856a-4f7c-9a25-08edfcb508e3",
+      "name": "Get a record",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "Z9ew79pvNQv1rKVo",
+          "name": "Airtable Personal Access Token (Keratin)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        1376,
+        352
+      ],
+      "id": "f7b05c95-5adf-4c26-86f0-d092d2a33113",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "9r5k9NqUaiUN2sqW",
+          "name": "Gemini (Keratin)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "base": {
+          "__rl": true,
+          "value": "appm8eW6JJG4UxFKJ",
+          "mode": "list",
+          "cachedResultName": "LinkedIn Performance Analyzer",
+          "cachedResultUrl": "https://airtable.com/appm8eW6JJG4UxFKJ"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblSL9VeHqnWf9PNv",
+          "mode": "list",
+          "cachedResultName": "Analyzed Data",
+          "cachedResultUrl": "https://airtable.com/appm8eW6JJG4UxFKJ/tblSL9VeHqnWf9PNv"
+        },
+        "id": "={{ $json.query.recordId }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        -336,
+        864
+      ],
+      "id": "9e2ad9ba-5767-48ff-847f-68b964fa7b68",
+      "name": "Get a record1",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "Z9ew79pvNQv1rKVo",
+          "name": "Airtable Personal Access Token (Keratin)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Create a new LinkedIn post using the following inputs:\n\nCompany: {{ $json[\"Company/Hashtag/Profile name\"] }}\nOriginal Post Summary: {{ $json[\"Linkedin Post Text\"] }}\nKey Insights: {{ $json[\"Key Insights\"] }}\n\nWrite a fresh, original LinkedIn post following the system instructions.\nOutput only the final LinkedIn post text.\n",
+        "options": {
+          "systemMessage": "=You are an elite strategic content analyst and a top-tier LinkedIn ghostwriter trusted by executives, founders, and global brands.\n\nYour role combines:\n1. High-level business analysis\n2. Insight extraction\n3. Emotional-intelligent communication\n4. Persuasive, modern LinkedIn writing\n\n--- YOUR CAPABILITIES ---\n• You interpret company context, audience sentiment, and key insights with precision.  \n• You understand leadership, innovation, market positioning, and professional storytelling.  \n• You think like a strategist, write like a human, and communicate like a respected industry voice.\n\n--- WRITING STYLE GUIDELINES ---\n• Tone: clear, modern, human, intelligent, confident.  \n• Structure: 3–6 short paragraphs; skimmable.  \n• Hook: optional but impactful first line.  \n• Value: insight-driven, story-driven, or leadership-driven — depending on the input.  \n• Avoid corporate jargon unless context requires it.  \n• Use emojis *only sparingly* and only when they elevate the message.  \n• No analytics references (likes/comments).  \n• No acknowledgments of “data,” “your input,” or “insights.”  \n• No meta language like “as an AI.”\n\n--- OBJECTIVE ---\nTransform the input (company name, original post summary, extracted insights) into a *fresh, original, high-impact LinkedIn post* that:\n• feels authentic  \n• communicates maturity and leadership  \n• provides value or perspective  \n• builds brand authority  \n• resonates with a professional audience  \n\nYou NEVER rewrite the original post.  \nYou create a NEW narrative inspired by the themes and signals from the input.\n\nYour output must be ONLY the finished LinkedIn post text.  \nNo JSON, no code blocks, no explanations — only the final crafted post.\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        16,
+        864
+      ],
+      "id": "7f8e856f-fd64-42a0-942a-8ce703ecc1b7",
+      "name": "Writer Agent"
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "base": {
+          "__rl": true,
+          "value": "appm8eW6JJG4UxFKJ",
+          "mode": "list",
+          "cachedResultName": "LinkedIn Performance Analyzer",
+          "cachedResultUrl": "https://airtable.com/appm8eW6JJG4UxFKJ"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblezIJAP0zjKfScJ",
+          "mode": "list",
+          "cachedResultName": "Generated assets",
+          "cachedResultUrl": "https://airtable.com/appm8eW6JJG4UxFKJ/tblezIJAP0zjKfScJ"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Generated Post Text": "={{ $json.output }}",
+            "Type": "={{ $('Get a record1').item.json.Type.toString() }}",
+            "Company/Hashtag/Profile name": "={{ $('Get a record1').item.json['Company/Hashtag/Profile name'] }}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true
+            },
+            {
+              "id": "Company/Hashtag/Profile name",
+              "displayName": "Company/Hashtag/Profile name",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Generated Post Text",
+              "displayName": "Generated Post Text",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Generated Image",
+              "displayName": "Generated Image",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Type",
+              "displayName": "Type",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Hashtags",
+                  "value": "Hashtags"
+                },
+                {
+                  "name": "Profile",
+                  "value": "Profile"
+                },
+                {
+                  "name": "Company",
+                  "value": "Company"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Generate Image",
+              "displayName": "Generate Image",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Reference Image",
+              "displayName": "Reference Image",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        448,
+        960
+      ],
+      "id": "4dc0121e-e34b-47b1-9db5-19e1f25f6374",
+      "name": "Create or update a record",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "Z9ew79pvNQv1rKVo",
+          "name": "Airtable Personal Access Token (Keratin)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "={{ $('Get a record2').item.json['Reference Image'][0].url }}",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true,
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        288,
+        1280
+      ],
+      "id": "a1946fd7-f4dd-4d27-bb14-3ee2abbdb013",
+      "name": "Get Reference Image"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Analyze this post from the social channel on the topic. Generate a detailed Freepik-compatible image prompt describing a professional infographic that visualizes the key insights, pros/cons, and trends, in an illustrative style suitable for posting on Linkedin\n\nInput Script: {{ $json['Generated Post Text'] }}  // E.g., the full generated threads from previous nodes\nProvide the plain text prompt output.",
+        "options": {
+          "systemMessage": "=You are an Image Prompt Generator Agent for Freepik API, specialized in creating detailed, text-based prompts for AI image generation based on content from various social channels like Twitter, YouTube, or Instagram about topics such as climate conferences, AI, or business trends. Your goal is to analyze the input threads (multiple related threads or posts), extract common key insights, pros/cons, stats, and trends across them, and generate a single, optimized prompt (50-100 words) that describes a professional infographic or visual incorporating those elements, like charts or icons, tailored for the specified social channel.\nKey Guidelines:\n\n\nUse Script's text: Read provided text, analyze for main topics, pros/cons, stats, and visualize them (e.g., \"infographic showing climate action insights with icons for finance goals and challenges\").\nFreepik-optimized: Focus on descriptive text in a clean, illustrative style (e.g., simple icons like globes/trees for climate, or gears/networks for AI), educational layout suitable for the social channel (e.g., concise for Twitter, engaging for Instagram).\nProfessional visuals: Aim for topic-themed (e.g., graphs, timelines, balanced pros/cons sections) to complement the social content.\nOutput Structure: Plain text only—the generated prompt as a single string.\nExample Prompt Output:\nCreate an illustrative infographic suitable for posting on Linkedin, balanced section for opportunities in just transitions."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        -96,
+        1280
+      ],
+      "id": "8b9860cd-8cbc-430f-b212-85adfe960b3d",
+      "name": "Image Prompt Agent"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Input: Binary from HTTP (items[0].binary.data.data is the buffer)\nconst binaryData = items[0].binary.data.data;  // The image buffer\n\n// Convert to base64\nconst base64 = binaryData.toString('base64');\n\n// Output: Base64 for structure/style references\nreturn [{ json: { refBase64: base64 } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        528,
+        1280
+      ],
+      "id": "9e4278b6-ab70-4a9b-bdf4-ed204c6667b4",
+      "name": "Binary to base64"
+    },
+    {
+      "parameters": {
+        "base": {
+          "__rl": true,
+          "value": "appm8eW6JJG4UxFKJ",
+          "mode": "list",
+          "cachedResultName": "LinkedIn Performance Analyzer",
+          "cachedResultUrl": "https://airtable.com/appm8eW6JJG4UxFKJ"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblezIJAP0zjKfScJ",
+          "mode": "list",
+          "cachedResultName": "Generated assets",
+          "cachedResultUrl": "https://airtable.com/appm8eW6JJG4UxFKJ/tblezIJAP0zjKfScJ"
+        },
+        "id": "={{ $json.query.recordId }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        -432,
+        1280
+      ],
+      "id": "284efc83-a5ba-45ec-b14f-cd83349759c4",
+      "name": "Get a record2",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "Z9ew79pvNQv1rKVo",
+          "name": "Airtable Personal Access Token (Keratin)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "/**\n * n8n Code node: Clean & normalize AI Agent raw response into structured JSON\n *\n * Input: items from AI Agent where each item.json.output is a string that\n *        contains fenced JSON (```json { ... } ```) or plain JSON text.\n *\n * Output: array of items [{ json: <parsedObject> }, ...] where parsedObject matches:\n * {\n *   topic, \"Linkedin Post Text\", Url,\n *   \"Overall Sentiment\": integer,\n *   \"Tool Helpfulness\": integer,\n *   \"Common Questions\": string,\n *   \"Key Insights\": [string...],\n *   \"Likes\": integer,\n *   \"Shares\": integer,\n *   \"Comments\": integer\n * }\n */\n\nfunction findFirstJsonSubstring(s) {\n  if (!s || typeof s !== 'string') return null;\n\n  // Remove typical code fence wrappers first\n  // e.g. ```json\\n{ ... }\\n```\n  const fenceMatch = s.match(/```(?:json)?\\s*([\\s\\S]*?)\\s*```/i);\n  if (fenceMatch && fenceMatch[1]) {\n    const candidate = fenceMatch[1].trim();\n    // If fence content already starts with { and ends with }, return it\n    if (candidate.startsWith('{') && candidate.endsWith('}')) return candidate;\n    // otherwise we fallthrough to generic search\n    s = fenceMatch[1];\n  }\n\n  // Generic approach: find first \"{\" and match braces to find the corresponding \"}\"\n  const firstOpen = s.indexOf('{');\n  if (firstOpen === -1) return null;\n  let depth = 0;\n  for (let i = firstOpen; i < s.length; i++) {\n    const ch = s[i];\n    if (ch === '{') depth++;\n    else if (ch === '}') depth--;\n    if (depth === 0) {\n      return s.slice(firstOpen, i + 1);\n    }\n  }\n\n  // fallback: if nothing matched, try to parse any substring that looks like JSON using regex (last resort)\n  const braceBlock = s.match(/\\{[\\s\\S]*\\}/);\n  return braceBlock ? braceBlock[0] : null;\n}\n\nfunction safeParseJsonString(s) {\n  try {\n    return JSON.parse(s);\n  } catch (e) {\n    // Attempt mild cleanups\n    const cleaned = s\n      .replace(/[“”]/g, '\"')\n      .replace(/[‘’]/g, \"'\")\n      .replace(/,\\s*([}\\]])/g, '$1'); // remove trailing commas\n    try {\n      return JSON.parse(cleaned);\n    } catch (e2) {\n      return null;\n    }\n  }\n}\n\nfunction toIntSafe(v, fallback = 0) {\n  if (v === null || v === undefined || v === '') return fallback;\n  if (typeof v === 'number') return Math.round(v);\n  // strip non-digits (but keep negative? not needed here)\n  const num = Number(String(v).replace(/[^\\d-]+/g, ''));\n  return Number.isFinite(num) ? Math.round(num) : fallback;\n}\n\nfunction ensureString(v) {\n  if (v === null || v === undefined) return '';\n  if (Array.isArray(v)) return v.join(', ');\n  return String(v);\n}\n\nfunction ensureArrayOfStrings(v) {\n  if (Array.isArray(v)) return v.map(x => String(x).trim());\n  if (typeof v === 'string') {\n    const trimmed = v.trim();\n    if (trimmed === '') return [];\n    // If looks like a comma joined list, split; otherwise return single item array\n    if (trimmed.includes(',') && !trimmed.startsWith('[')) {\n      return trimmed.split(',').map(x => x.trim()).filter(Boolean);\n    }\n    // Maybe a JSON array string like '[\"a\",\"b\"]' — try parsing\n    try {\n      const parsed = JSON.parse(trimmed);\n      if (Array.isArray(parsed)) return parsed.map(x => String(x).trim());\n    } catch (e) {\n      // ignore\n    }\n    return [trimmed];\n  }\n  return [String(v)];\n}\n\n// Main\nconst inputItems = $items(); // get all incoming items (from AI Agent)\n\nconst output = [];\n\nfor (const it of inputItems) {\n  const raw = it.json?.output ?? it.json?.raw ?? it.json?.response ?? it.json;\n\n  // raw may be an object (already parsed) or a string\n  let parsedObj = null;\n\n  if (typeof raw === 'object' && !Array.isArray(raw)) {\n    parsedObj = raw;\n  } else {\n    const rawStr = (typeof raw === 'string') ? raw : JSON.stringify(raw);\n    const jsonSubstring = findFirstJsonSubstring(rawStr);\n    if (jsonSubstring) {\n      parsedObj = safeParseJsonString(jsonSubstring);\n    } else {\n      // final attempt: try parsing the entire raw string directly\n      parsedObj = safeParseJsonString(rawStr);\n    }\n  }\n\n  if (!parsedObj) {\n    // Couldn't parse — return a helpful error-style object while keeping workflow moving\n    output.push({\n      json: {\n        parse_error: true,\n        parse_error_message: 'Could not extract JSON from model output',\n        raw_output: (typeof raw === 'string' ? raw : JSON.stringify(raw)).slice(0, 2000)\n      }\n    });\n    continue;\n  }\n\n  // Normalize keys to the exact schema you use (keep capitalization and spaces if desired)\n  // Here we expect keys like: topic, Linkedin Post Text, Url, Overall Sentiment, Tool Helpfulness, Common Questions, Key Insights, Likes, Shares, Comments\n\n  const normalized = {};\n\n  // Basic string fields\n  normalized.topic = ensureString(parsedObj.topic || parsedObj.Topic || parsedObj.topic_text || parsedObj['topic']);\n  normalized[\"Linkedin Post Text\"] = ensureString(parsedObj[\"Linkedin Post Text\"] ?? parsedObj[\"Linkedin Post text\"] ?? parsedObj.linkedin_post_text ?? parsedObj.post_text ?? parsedObj[\"LinkedIn Post Text\"] ?? parsedObj[\"LinkedinPostText\"]);\n  normalized.Url = ensureString(parsedObj.Url ?? parsedObj.url ?? parsedObj.link ?? parsedObj.URL);\n\n  // Numeric fields coerced to integers\n  normalized[\"Overall Sentiment\"] = toIntSafe(parsedObj[\"Overall Sentiment\"] ?? parsedObj.overall_sentiment ?? parsedObj.overall ?? parsedObj.sentiment, 3);\n  normalized[\"Tool Helpfulness\"] = toIntSafe(parsedObj[\"Tool Helpfulness\"] ?? parsedObj.tool_helpfulness ?? parsedObj.helpfulness, 3);\n\n  normalized[\"Likes\"] = toIntSafe(parsedObj[\"Likes\"] ?? parsedObj.likes ?? parsedObj.numLikes ?? parsedObj.num_likes, 0);\n  normalized[\"Shares\"] = toIntSafe(parsedObj[\"Shares\"] ?? parsedObj.shares ?? parsedObj.numShares ?? parsedObj.num_shares, 0);\n  normalized[\"Comments\"] = toIntSafe(parsedObj[\"Comments\"] ?? parsedObj.comments ?? parsedObj.numComments ?? parsedObj.num_comments, 0);\n\n  // Common Questions as single-line string\n  normalized[\"Common Questions\"] = ensureString(parsedObj[\"Common Questions\"] ?? parsedObj.common_questions ?? parsedObj.commonQuestions ?? parsedObj.questions ?? '');\n\n  // Key Insights: ensure array of individual strings\n  normalized[\"Key Insights\"] = ensureArrayOfStrings(parsedObj[\"Key Insights\"] ?? parsedObj.key_insights ?? parsedObj.keyInsights ?? parsedObj.insights ?? parsedObj[\"Key insights\"] ?? []);\n\n  // Final sanity: ensure types are correct\n  // Convert numbers if necessary, ensure arrays are arrays\n  normalized[\"Overall Sentiment\"] = (Number.isInteger(normalized[\"Overall Sentiment\"]) ? normalized[\"Overall Sentiment\"] : toIntSafe(normalized[\"Overall Sentiment\"], 3));\n  normalized[\"Tool Helpfulness\"] = (Number.isInteger(normalized[\"Tool Helpfulness\"]) ? normalized[\"Tool Helpfulness\"] : toIntSafe(normalized[\"Tool Helpfulness\"], 3));\n  normalized[\"Likes\"] = toIntSafe(normalized[\"Likes\"], 0);\n  normalized[\"Shares\"] = toIntSafe(normalized[\"Shares\"], 0);\n  normalized[\"Comments\"] = toIntSafe(normalized[\"Comments\"], 0);\n  if (!Array.isArray(normalized[\"Key Insights\"])) normalized[\"Key Insights\"] = ensureArrayOfStrings(normalized[\"Key Insights\"]);\n\n  // Push cleaned object as the node output\n  output.push({ json: normalized });\n}\n\n// Return cleaned items\nreturn output;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1792,
+        192
+      ],
+      "id": "a639caed-07df-404c-9808-fd3d2618d8e6",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "base": {
+          "__rl": true,
+          "value": "appm8eW6JJG4UxFKJ",
+          "mode": "list",
+          "cachedResultName": "LinkedIn Performance Analyzer",
+          "cachedResultUrl": "https://airtable.com/appm8eW6JJG4UxFKJ"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblSL9VeHqnWf9PNv",
+          "mode": "list",
+          "cachedResultName": "Analyzed Data",
+          "cachedResultUrl": "https://airtable.com/appm8eW6JJG4UxFKJ/tblSL9VeHqnWf9PNv"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Linkedin Post Text": "={{ $json['Linkedin Post Text'] }}",
+            "Linkedin Post Url": "={{ $json.Url }}",
+            "Overall Sentiment": "={{ $json['Overall Sentiment'].toString() }}",
+            "Tool Helpfulness": "={{ $json['Tool Helpfulness'].toString() }}",
+            "Common Questions": "={{ $json['Common Questions'] }}",
+            "Key Insights": "={{ $json['Key Insights'].toString() }}",
+            "Likes": "={{ $json.Likes }}",
+            "Shares": "={{ $json.Shares }}",
+            "Comments": "={{ $json.Comments }}",
+            "Type": "={{ $('Get a record').item.json.Type.toString() }}",
+            "Company/Hashtag/Profile name": "={{ $('Get a record').item.json['URL/Hashtag/Company'] }}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": false
+            },
+            {
+              "id": "Company/Hashtag/Profile name",
+              "displayName": "Company/Hashtag/Profile name",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Linkedin Post Text",
+              "displayName": "Linkedin Post Text",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Linkedin Post Url",
+              "displayName": "Linkedin Post Url",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Open URL Linkedin",
+              "displayName": "Open URL Linkedin",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "Overall Sentiment",
+              "displayName": "Overall Sentiment",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "1",
+                  "value": "1"
+                },
+                {
+                  "name": "2",
+                  "value": "2"
+                },
+                {
+                  "name": "3",
+                  "value": "3"
+                },
+                {
+                  "name": "4",
+                  "value": "4"
+                },
+                {
+                  "name": "5",
+                  "value": "5"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Tool Helpfulness",
+              "displayName": "Tool Helpfulness",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "1",
+                  "value": "1"
+                },
+                {
+                  "name": "2",
+                  "value": "2"
+                },
+                {
+                  "name": "3",
+                  "value": "3"
+                },
+                {
+                  "name": "4",
+                  "value": "4"
+                },
+                {
+                  "name": "5",
+                  "value": "5"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Common Questions",
+              "displayName": "Common Questions",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Key Insights",
+              "displayName": "Key Insights",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Likes",
+              "displayName": "Likes",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Shares",
+              "displayName": "Shares",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Comments",
+              "displayName": "Comments",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Type",
+              "displayName": "Type",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Profile",
+                  "value": "Profile"
+                },
+                {
+                  "name": "Company",
+                  "value": "Company"
+                },
+                {
+                  "name": "Hashtag",
+                  "value": "Hashtag"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        2320,
+        192
+      ],
+      "id": "fbbc5b0e-eb9d-441b-996a-cec07906d68c",
+      "name": "Create or update a record2",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "Z9ew79pvNQv1rKVo",
+          "name": "Airtable Personal Access Token (Keratin)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "base": {
+          "__rl": true,
+          "value": "appm8eW6JJG4UxFKJ",
+          "mode": "list",
+          "cachedResultName": "LinkedIn Performance Analyzer",
+          "cachedResultUrl": "https://airtable.com/appm8eW6JJG4UxFKJ"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblSL9VeHqnWf9PNv",
+          "mode": "list",
+          "cachedResultName": "Analyzed Data",
+          "cachedResultUrl": "https://airtable.com/appm8eW6JJG4UxFKJ/tblSL9VeHqnWf9PNv"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Linkedin Post Text": "={{ $json['Linkedin Post Text'] }}",
+            "Linkedin Post Url": "={{ $json.Url }}",
+            "Overall Sentiment": "={{ $json['Overall Sentiment'].toString() }}",
+            "Tool Helpfulness": "={{ $json['Tool Helpfulness'].toString() }}",
+            "Common Questions": "={{ $json['Common Questions'] }}",
+            "Key Insights": "={{ $json['Key Insights'].toString() }}",
+            "Likes": "={{ $json.Likes }}",
+            "Shares": "={{ $json.Shares }}",
+            "Comments": "={{ $json.Comments }}",
+            "Type": "={{ $('Get a record').item.json.Type.toString() }}",
+            "Company/Hashtag/Profile name": "={{ $('Get a record').item.json['Username/Hashtag'] }}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": false
+            },
+            {
+              "id": "Company/Hashtag/Profile name",
+              "displayName": "Company/Hashtag/Profile name",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Linkedin Post Text",
+              "displayName": "Linkedin Post Text",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Linkedin Post Url",
+              "displayName": "Linkedin Post Url",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Open URL Linkedin",
+              "displayName": "Open URL Linkedin",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "Overall Sentiment",
+              "displayName": "Overall Sentiment",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "1",
+                  "value": "1"
+                },
+                {
+                  "name": "2",
+                  "value": "2"
+                },
+                {
+                  "name": "3",
+                  "value": "3"
+                },
+                {
+                  "name": "4",
+                  "value": "4"
+                },
+                {
+                  "name": "5",
+                  "value": "5"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Tool Helpfulness",
+              "displayName": "Tool Helpfulness",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "1",
+                  "value": "1"
+                },
+                {
+                  "name": "2",
+                  "value": "2"
+                },
+                {
+                  "name": "3",
+                  "value": "3"
+                },
+                {
+                  "name": "4",
+                  "value": "4"
+                },
+                {
+                  "name": "5",
+                  "value": "5"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Common Questions",
+              "displayName": "Common Questions",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Key Insights",
+              "displayName": "Key Insights",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Likes",
+              "displayName": "Likes",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Shares",
+              "displayName": "Shares",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Comments",
+              "displayName": "Comments",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Type",
+              "displayName": "Type",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Profile",
+                  "value": "Profile"
+                },
+                {
+                  "name": "Company",
+                  "value": "Company"
+                },
+                {
+                  "name": "Hashtags",
+                  "value": "Hashtags"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        2288,
+        688
+      ],
+      "id": "6b4f0bc7-dcfe-42f6-ba15-8f86faa685f4",
+      "name": "Create or update a record3",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "Z9ew79pvNQv1rKVo",
+          "name": "Airtable Personal Access Token (Keratin)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        1360,
+        848
+      ],
+      "id": "9a0d20f4-97f6-4367-8795-62631039083a",
+      "name": "Google Gemini Chat Model2",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "9r5k9NqUaiUN2sqW",
+          "name": "Gemini (Keratin)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "/**\n * n8n Code node: Clean & normalize AI Agent raw response into structured JSON\n *\n * Input: items from AI Agent where each item.json.output is a string that\n *        contains fenced JSON (```json { ... } ```) or plain JSON text.\n *\n * Output: array of items [{ json: <parsedObject> }, ...] where parsedObject matches:\n * {\n *   topic, \"Linkedin Post Text\", Url,\n *   \"Overall Sentiment\": integer,\n *   \"Tool Helpfulness\": integer,\n *   \"Common Questions\": string,\n *   \"Key Insights\": [string...],\n *   \"Likes\": integer,\n *   \"Shares\": integer,\n *   \"Comments\": integer\n * }\n */\n\nfunction findFirstJsonSubstring(s) {\n  if (!s || typeof s !== 'string') return null;\n\n  // Remove typical code fence wrappers first\n  // e.g. ```json\\n{ ... }\\n```\n  const fenceMatch = s.match(/```(?:json)?\\s*([\\s\\S]*?)\\s*```/i);\n  if (fenceMatch && fenceMatch[1]) {\n    const candidate = fenceMatch[1].trim();\n    // If fence content already starts with { and ends with }, return it\n    if (candidate.startsWith('{') && candidate.endsWith('}')) return candidate;\n    // otherwise we fallthrough to generic search\n    s = fenceMatch[1];\n  }\n\n  // Generic approach: find first \"{\" and match braces to find the corresponding \"}\"\n  const firstOpen = s.indexOf('{');\n  if (firstOpen === -1) return null;\n  let depth = 0;\n  for (let i = firstOpen; i < s.length; i++) {\n    const ch = s[i];\n    if (ch === '{') depth++;\n    else if (ch === '}') depth--;\n    if (depth === 0) {\n      return s.slice(firstOpen, i + 1);\n    }\n  }\n\n  // fallback: if nothing matched, try to parse any substring that looks like JSON using regex (last resort)\n  const braceBlock = s.match(/\\{[\\s\\S]*\\}/);\n  return braceBlock ? braceBlock[0] : null;\n}\n\nfunction safeParseJsonString(s) {\n  try {\n    return JSON.parse(s);\n  } catch (e) {\n    // Attempt mild cleanups\n    const cleaned = s\n      .replace(/[“”]/g, '\"')\n      .replace(/[‘’]/g, \"'\")\n      .replace(/,\\s*([}\\]])/g, '$1'); // remove trailing commas\n    try {\n      return JSON.parse(cleaned);\n    } catch (e2) {\n      return null;\n    }\n  }\n}\n\nfunction toIntSafe(v, fallback = 0) {\n  if (v === null || v === undefined || v === '') return fallback;\n  if (typeof v === 'number') return Math.round(v);\n  // strip non-digits (but keep negative? not needed here)\n  const num = Number(String(v).replace(/[^\\d-]+/g, ''));\n  return Number.isFinite(num) ? Math.round(num) : fallback;\n}\n\nfunction ensureString(v) {\n  if (v === null || v === undefined) return '';\n  if (Array.isArray(v)) return v.join(', ');\n  return String(v);\n}\n\nfunction ensureArrayOfStrings(v) {\n  if (Array.isArray(v)) return v.map(x => String(x).trim());\n  if (typeof v === 'string') {\n    const trimmed = v.trim();\n    if (trimmed === '') return [];\n    // If looks like a comma joined list, split; otherwise return single item array\n    if (trimmed.includes(',') && !trimmed.startsWith('[')) {\n      return trimmed.split(',').map(x => x.trim()).filter(Boolean);\n    }\n    // Maybe a JSON array string like '[\"a\",\"b\"]' — try parsing\n    try {\n      const parsed = JSON.parse(trimmed);\n      if (Array.isArray(parsed)) return parsed.map(x => String(x).trim());\n    } catch (e) {\n      // ignore\n    }\n    return [trimmed];\n  }\n  return [String(v)];\n}\n\n// Main\nconst inputItems = $items(); // get all incoming items (from AI Agent)\n\nconst output = [];\n\nfor (const it of inputItems) {\n  const raw = it.json?.output ?? it.json?.raw ?? it.json?.response ?? it.json;\n\n  // raw may be an object (already parsed) or a string\n  let parsedObj = null;\n\n  if (typeof raw === 'object' && !Array.isArray(raw)) {\n    parsedObj = raw;\n  } else {\n    const rawStr = (typeof raw === 'string') ? raw : JSON.stringify(raw);\n    const jsonSubstring = findFirstJsonSubstring(rawStr);\n    if (jsonSubstring) {\n      parsedObj = safeParseJsonString(jsonSubstring);\n    } else {\n      // final attempt: try parsing the entire raw string directly\n      parsedObj = safeParseJsonString(rawStr);\n    }\n  }\n\n  if (!parsedObj) {\n    // Couldn't parse — return a helpful error-style object while keeping workflow moving\n    output.push({\n      json: {\n        parse_error: true,\n        parse_error_message: 'Could not extract JSON from model output',\n        raw_output: (typeof raw === 'string' ? raw : JSON.stringify(raw)).slice(0, 2000)\n      }\n    });\n    continue;\n  }\n\n  // Normalize keys to the exact schema you use (keep capitalization and spaces if desired)\n  // Here we expect keys like: topic, Linkedin Post Text, Url, Overall Sentiment, Tool Helpfulness, Common Questions, Key Insights, Likes, Shares, Comments\n\n  const normalized = {};\n\n  // Basic string fields\n  normalized.topic = ensureString(parsedObj.topic || parsedObj.Topic || parsedObj.topic_text || parsedObj['topic']);\n  normalized[\"Linkedin Post Text\"] = ensureString(parsedObj[\"Linkedin Post Text\"] ?? parsedObj[\"Linkedin Post text\"] ?? parsedObj.linkedin_post_text ?? parsedObj.post_text ?? parsedObj[\"LinkedIn Post Text\"] ?? parsedObj[\"LinkedinPostText\"]);\n  normalized.Url = ensureString(parsedObj.Url ?? parsedObj.url ?? parsedObj.link ?? parsedObj.URL);\n\n  // Numeric fields coerced to integers\n  normalized[\"Overall Sentiment\"] = toIntSafe(parsedObj[\"Overall Sentiment\"] ?? parsedObj.overall_sentiment ?? parsedObj.overall ?? parsedObj.sentiment, 3);\n  normalized[\"Tool Helpfulness\"] = toIntSafe(parsedObj[\"Tool Helpfulness\"] ?? parsedObj.tool_helpfulness ?? parsedObj.helpfulness, 3);\n\n  normalized[\"Likes\"] = toIntSafe(parsedObj[\"Likes\"] ?? parsedObj.likes ?? parsedObj.numLikes ?? parsedObj.num_likes, 0);\n  normalized[\"Shares\"] = toIntSafe(parsedObj[\"Shares\"] ?? parsedObj.shares ?? parsedObj.numShares ?? parsedObj.num_shares, 0);\n  normalized[\"Comments\"] = toIntSafe(parsedObj[\"Comments\"] ?? parsedObj.comments ?? parsedObj.numComments ?? parsedObj.num_comments, 0);\n\n  // Common Questions as single-line string\n  normalized[\"Common Questions\"] = ensureString(parsedObj[\"Common Questions\"] ?? parsedObj.common_questions ?? parsedObj.commonQuestions ?? parsedObj.questions ?? '');\n\n  // Key Insights: ensure array of individual strings\n  normalized[\"Key Insights\"] = ensureArrayOfStrings(parsedObj[\"Key Insights\"] ?? parsedObj.key_insights ?? parsedObj.keyInsights ?? parsedObj.insights ?? parsedObj[\"Key insights\"] ?? []);\n\n  // Final sanity: ensure types are correct\n  // Convert numbers if necessary, ensure arrays are arrays\n  normalized[\"Overall Sentiment\"] = (Number.isInteger(normalized[\"Overall Sentiment\"]) ? normalized[\"Overall Sentiment\"] : toIntSafe(normalized[\"Overall Sentiment\"], 3));\n  normalized[\"Tool Helpfulness\"] = (Number.isInteger(normalized[\"Tool Helpfulness\"]) ? normalized[\"Tool Helpfulness\"] : toIntSafe(normalized[\"Tool Helpfulness\"], 3));\n  normalized[\"Likes\"] = toIntSafe(normalized[\"Likes\"], 0);\n  normalized[\"Shares\"] = toIntSafe(normalized[\"Shares\"], 0);\n  normalized[\"Comments\"] = toIntSafe(normalized[\"Comments\"], 0);\n  if (!Array.isArray(normalized[\"Key Insights\"])) normalized[\"Key Insights\"] = ensureArrayOfStrings(normalized[\"Key Insights\"]);\n\n  // Push cleaned object as the node output\n  output.push({ json: normalized });\n}\n\n// Return cleaned items\nreturn output;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1776,
+        688
+      ],
+      "id": "be6c11c0-a308-4cf8-8e83-674d4e4e735e",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -48,
+        1024
+      ],
+      "id": "4da04a5c-1250-4565-b71d-96e6e7f19673",
+      "name": "Google Gemini Chat Model3",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "9r5k9NqUaiUN2sqW",
+          "name": "Gemini (Keratin)"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        160,
+        1056
+      ],
+      "id": "7a66ddb1-bcd5-4d68-ab4c-98aa99dabbdc",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -128,
+        1472
+      ],
+      "id": "4e33a9c0-749c-4836-9ea3-060ae6a0a972",
+      "name": "Google Gemini Chat Model1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "9r5k9NqUaiUN2sqW",
+          "name": "Gemini (Keratin)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "a2149a3a-3ed3-4797-a24d-73b53fc374e0",
+                    "leftValue": "={{ $json.data.status }}",
+                    "rightValue": "COMPLETED",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Success"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "bdf6cf56-873f-45d7-8f63-9b3c265f6b14",
+                    "leftValue": "={{ $json.data.status }}",
+                    "rightValue": "CREATED",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Started"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.data.status }}",
+                    "rightValue": "IN_PROGRESS",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "b8fb7d92-ec55-4756-ad96-a70c509a029d"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "In Progress"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [
+        1392,
+        1264
+      ],
+      "id": "86850e2e-1db1-420c-8989-d960e291e493",
+      "name": "Switch1"
+    },
+    {
+      "parameters": {
+        "amount": 10
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1792,
+        1456
+      ],
+      "id": "2cce730b-b595-446e-b6ce-7df49ccd2834",
+      "name": "Wait",
+      "webhookId": "d4182d54-5ee6-4160-850a-c96db81a862e"
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "base": {
+          "__rl": true,
+          "value": "appm8eW6JJG4UxFKJ",
+          "mode": "list",
+          "cachedResultName": "LinkedIn Performance Analyzer",
+          "cachedResultUrl": "https://airtable.com/appm8eW6JJG4UxFKJ"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblezIJAP0zjKfScJ",
+          "mode": "list",
+          "cachedResultName": "Generated assets",
+          "cachedResultUrl": "https://airtable.com/appm8eW6JJG4UxFKJ/tblezIJAP0zjKfScJ"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id": "={{ $('Get a record2').item.json.id }}",
+            "Generated Image": "={{ $json.data.generated.map(link => ({ url: link })) }}",
+            "Company/Hashtag/Profile name": "={{ $('Get a record2').item.json['Company/Hashtag/Profile name'] }}",
+            "Type": "={{ $('Get a record2').item.json.Type.toString() }}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": false
+            },
+            {
+              "id": "Company/Hashtag/Profile name",
+              "displayName": "Company/Hashtag/Profile name",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Generated Post Text",
+              "displayName": "Generated Post Text",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Generated Image",
+              "displayName": "Generated Image",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Type",
+              "displayName": "Type",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Hashtags",
+                  "value": "Hashtags"
+                },
+                {
+                  "name": "Profile",
+                  "value": "Profile"
+                },
+                {
+                  "name": "Company",
+                  "value": "Company"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Generate Image",
+              "displayName": "Generate Image",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Reference Image",
+              "displayName": "Reference Image",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        1776,
+        1136
+      ],
+      "id": "58395a40-4814-45bc-9d2b-1998cf32fa72",
+      "name": "Create or update a record1",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "Z9ew79pvNQv1rKVo",
+          "name": "Airtable Personal Access Token (Keratin)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "=https://api.freepik.com/v1/ai/gemini-2-5-flash-image-preview/{{ $json.data.task_id }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-freepik-api-key",
+              "value": "xxxxapikeyxxx"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1120,
+        1280
+      ],
+      "id": "5012ccd8-b997-4544-9a02-adeb80446ed8",
+      "name": "Get Image"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.freepik.com/v1/ai/gemini-2-5-flash-image-preview",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-freepik-api-key",
+              "value": "xxxapikeyxxxx"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"prompt\": {{ JSON.stringify($('Get Reference Image').item.json.output) }},\n  \"reference_images\": [\n    {{ JSON.stringify($json.refBase64) }}\n  ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        800,
+        1280
+      ],
+      "id": "94221666-eaf8-4327-9d1d-99bf8e7abeff",
+      "name": "Post Image1"
+    },
+    {
+      "parameters": {
+        "path": "48136d71-8427-4093-ba6b-ef966e34de4e",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -960,
+        688
+      ],
+      "id": "ba2f9e06-1a93-4fca-8551-4bd40e7316d8",
+      "name": "Webhook",
+      "webhookId": "48136d71-8427-4093-ba6b-ef966e34de4e"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Topic: {{ $('Get a record').item.json['Username/Hashtag'] }}\nLinkedIn post text: {{ $json.post_input }}\nURL: {{ $json.url }}\nAggregated comments: {{ $json.concatenated_text }}\nReactions: likes={{ $json.numLikes }}, shares={{ $json.numShares }}, comments={{ $json.numComments }}\nPost type: {{ $json.type }}\n\nConsider LinkedIn context: business value/ROI, tagging colleagues, reaction types, praise for clarity/practicality/cost savings, mentions of confusion/friction/competing tools, save/share intent, meeting/async/cost-tier mentions.\n\nReturn ONLY the JSON object matching the schema.\n\nreturn as:\n\n{\n\t\"topic\": \"the topic passed to the ai agent node\",\n\t\"Linkedin Post Text\": \"Text of the linkedin post.\",\n  \"Url\": \"Url of the linkedin post.\",\n  \"Overall Sentiment\": \"Sentiment score analyzed out of 5\",\n  \"Tool Helpfulness\": \"Tool's Helpfulness out of 5\",\n  \"Common Questions\": \"The common questions.\",\n  \"Key Insights\": [\"Insight1, Insight2\"],\n  \"Likes\": \"Num of likes\",\n  \"Shares\": \"num of shares\",\n  \"Comments\": \"Num of comments\"\n}\n",
+        "options": {
+          "systemMessage": "You are a LinkedIn sentiment analyzer. Respond with ONLY a single JSON object that exactly matches the schema (no text, no markdown, no explanations). \n- overall and tool scores must be integers (1-5). \n- Likes, Shares, Comments must be integers. \n- Key Insights must be an array of separate strings.\nIf unsure about a value, pick a reasonable default (e.g., 3 for sentiment).\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        1440,
+        192
+      ],
+      "id": "d19656f3-a8c1-40b7-81a1-e0e0da49254a",
+      "name": "Analyse",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Topic: {{ $('Get a record').item.json['Username/Hashtag'] }}\nLinkedIn post text: {{ $json.post_input }}\nURL: {{ $json.post_url }}\nAggregated comments: {{ $json.concatenated_text }}\nReactions: likes={{ $json.stats.total_reactions }}, shares={{ $json.stats.shares }}, comments={{ $json.stats.comments }},Reaction types: {{ $json.stats.reactions }},\n\n\n\n\nConsider LinkedIn context: business value/ROI, tagging colleagues, reaction types, praise for clarity/practicality/cost savings, mentions of confusion/friction/competing tools, save/share intent, meeting/async/cost-tier mentions.\n\nReturn ONLY the JSON object matching the schema.\n\nreturn as:\n\n{\n\t\"topic\": \"the topic passed to the ai agent node\",\n\t\"Linkedin Post Text\": \"Text of the linkedin post.\",\n  \"Url\": \"Url of the linkedin post.\",\n  \"Overall Sentiment\": \"Sentiment score analyzed out of 5\",\n  \"Tool Helpfulness\": \"Tool's Helpfulness out of 5\",\n  \"Common Questions\": \"The common questions.\",\n  \"Key Insights\": [\"Insight1, Insight2\"],\n  \"Likes\": \"Num of likes\",\n  \"Shares\": \"num of shares\",\n  \"Comments\": \"Num of comments\"\n\n}\n",
+        "options": {
+          "systemMessage": "You are a LinkedIn sentiment analyzer. Respond with ONLY a single JSON object that exactly matches the schema (no text, no markdown, no explanations). \n- overall and tool scores must be integers (1-5). \n- Likes, Shares, Comments must be integers. \n- Key Insights must be an array of separate strings.\nIf unsure about a value, pick a reasonable default (e.g., 3 for sentiment).\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        1424,
+        688
+      ],
+      "id": "d4d23502-ba09-4486-926e-82b98523fdb7",
+      "name": "Sentimental",
+      "retryOnFail": true
+    }
+  ],
+  "connections": {
+    "Code6": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "Scrapes LinkedIn Posts based on HashTags",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Json": {
+      "main": [
+        [
+          {
+            "node": "Split Out1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Summarize4": {
+      "main": [
+        [
+          {
+            "node": "Merge9",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out1": {
+      "main": [
+        [
+          {
+            "node": "Scraping LinkedIn Posts for Comments for Sentimental Analysis1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Scrapes LinkedIn Profiles and Companies",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge8": {
+      "main": [
+        [
+          {
+            "node": "Sentimental",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Json1": {
+      "main": [
+        [
+          {
+            "node": "Scraping LinkedIn Posts for Comments for Sentimental Analysis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Summarize5": {
+      "main": [
+        [
+          {
+            "node": "Merge8",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge9": {
+      "main": [
+        [
+          {
+            "node": "Analyse",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Checks Duplicates based on prev executions4": {
+      "main": [
+        [
+          {
+            "node": "Create or update a record2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Checks Duplicates based on prev executions5": {
+      "main": [
+        [
+          {
+            "node": "Create or update a record3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Scrapes LinkedIn Profiles and Companies": {
+      "main": [
+        [
+          {
+            "node": "Create Json",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge9",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Scrapes LinkedIn Posts based on HashTags": {
+      "main": [
+        [
+          {
+            "node": "Create Json1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge8",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Scraping LinkedIn Posts for Comments for Sentimental Analysis": {
+      "main": [
+        [
+          {
+            "node": "Summarize5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Scraping LinkedIn Posts for Comments for Sentimental Analysis1": {
+      "main": [
+        [
+          {
+            "node": "Summarize4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Get a record",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get a record1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get a record2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a record": {
+      "main": [
+        [
+          {
+            "node": "Code6",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Analyse",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a record1": {
+      "main": [
+        [
+          {
+            "node": "Writer Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Writer Agent": {
+      "main": [
+        [
+          {
+            "node": "Create or update a record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Reference Image": {
+      "main": [
+        [
+          {
+            "node": "Binary to base64",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Image Prompt Agent": {
+      "main": [
+        [
+          {
+            "node": "Get Reference Image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Binary to base64": {
+      "main": [
+        [
+          {
+            "node": "Post Image1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a record2": {
+      "main": [
+        [
+          {
+            "node": "Image Prompt Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Checks Duplicates based on prev executions4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Sentimental",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "Checks Duplicates based on prev executions5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model3": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Writer Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Image Prompt Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch1": {
+      "main": [
+        [
+          {
+            "node": "Create or update a record1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Get Image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Image": {
+      "main": [
+        [
+          {
+            "node": "Switch1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Post Image1": {
+      "main": [
+        [
+          {
+            "node": "Get Image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analyse": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sentimental": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "instanceId": "a226ccd2b47f2505e743dd72896ae1c385e1d543b95f0badc72e1ad42c93a962"
+  }
+}
