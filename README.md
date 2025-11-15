@@ -34,6 +34,15 @@ This repository contains the following n8n workflows:
 
     - **Files:**
       * [Nanobana_integration_with_n8n](Nanobana_integration_with_n8n)
+    
+- **📈 LinkedIn Performance Analyzer & Content Generator:**
+    - **Description:**  
+      This workflow automates the full cycle of analyzing LinkedIn content performance and generating high-quality posts with AI-powered visuals.  
+      It scrapes profiles, hashtags, or company pages; analyzes engagement, sentiment, and patterns; and generates optimized LinkedIn posts with matching AI images.  
+      All data, insights, and generated assets are stored neatly in Airtable tables.
+
+    - **Files:**
+      * [LinkedIn_Performance_Analyzer_and_Content_Generator](LinkedIn_Performance_Analyzer_and_Content_Generator)
 
 ---
 
