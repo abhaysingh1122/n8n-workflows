@@ -142,4 +142,102 @@ Inside n8n, modify the following:
 
 ## 🧱 Workflow Architecture
 
+```
+Input (Airtable)
+↓
+Processing (Scraping + Analysis)
+↓
+Output (Airtable)
+```
 
+### Three workflow branches:
+
+```
+├── Research: Scrape profiles/companies → Analyze → Insights
+├── Hashtag: Scrape hashtag posts → Analyze → Insights
+└── Generate: Create posts → Generate images → Output assets
+```
+
+---
+
+## ⚙️ Configuration Options
+
+### Customize Analysis
+Modify **Analyze** and **Sentimental Agent** nodes in n8n to change:
+
+- Output format  
+- Depth of insights  
+- Sentiment model instructions  
+
+---
+
+### Customize Content Generation
+Edit the **Writer Agent** system prompt to control:
+
+- Tone  
+- Writing style  
+- CTA format  
+- Post length  
+
+---
+
+### Customize Visual Generation
+Edit **Image Prompt Agent**:
+
+- Image style (realistic, vector, 3D, minimal, corporate, etc.)  
+- Color palette  
+- Layout  
+
+---
+
+## 🧪 Troubleshooting
+
+| Issue | Fix |
+|-------|------|
+| No data returned | Ensure Airtable field names match exactly |
+| AI parsing errors | Ensure JSON-only output enforced in prompts |
+| Scraping fails | Verify URLs and Apify limits |
+| Image stuck generating | Increase Wait node time or check Freepik API status |
+
+---
+
+## 💰 Cost Estimate
+
+For ~100 posts analyzed + 10 images/month:
+
+- **Apify:** ~$10  
+- **Gemini:** Free tier usually sufficient  
+- **Freepik:** Depends on usage  
+- **Airtable:** Free tier sufficient  
+
+---
+
+## 🤝 Contributing
+
+1. Fork repository  
+2. Create feature branch  
+3. Implement changes + test in n8n  
+4. Export updated workflow JSON  
+5. Submit pull request  
+
+---
+
+## 📄 License
+
+MIT License – see `LICENSE` file
+
+---
+
+## ⚠️ Disclaimer
+
+This project is for **educational and research** purposes.  
+Ensure compliance with:
+
+- LinkedIn Terms of Service  
+- Data privacy regulations  
+
+**Maintainers are not responsible for misuse.**
+
+---
+
+**Built with ❤️ using n8n workflow automation**
